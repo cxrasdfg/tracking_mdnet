@@ -99,17 +99,27 @@ class MDNet(object):
 
     def GetFeatures(self,img_path, bb_samples):
         regions=ExtractRegions(img_path,bb_samples)
-        return self._convModel.predict(regions,batch_size=10)
+        return self._convModel.predict(regions,batch_size=128)
 
     def GetScores(self,features):
-        return self._scoreModel.predict(features,batch_size=10)
+        return self._scoreModel.predict(features,batch_size=128)
 
     def Update(self,SPos,SNeg,iter_times):
         """update the weights in fc1 fc2 fc3 """
         #Spos is a data structure likes [[img_path,bb_samples],...]
 
-        SPos=[[i[0],np.array([j])] for i in SPos for j in i[1]]
-        SNeg=[[i[0],np.array([j])] for i in SNeg for j in i[1]]
+        # SPos=[[i[0],np.array([j])] for i in SPos for j in i[1]]
+        # SNeg=[[i[0],np.array([j])] for i in SNeg for j in i[1]]
+
+        PosRegions=np.empty([0,107,107,3])
+        NegRegions=np.empty([0,107,107,3])
+
+        for i in SPos:
+            PosRegions=np.concatenate([PosRegions,ExtractRegions(i[0],i[1])])
+
+        for i in SNeg:
+            NegRegions=np.concatenate([NegRegions,ExtractRegions(i[0],i[1])])
+
 
         pos_idx=np.empty(0,dtype=np.int64)
         neg_idx=np.empty(0,dtype=np.int64)
@@ -125,18 +135,21 @@ class MDNet(object):
         neg_idx=np.array(neg_idx)
 
         for i in range(iter_times):
-            bb_pos=[SPos[j] for j in pos_idx[i*32:i*32+32]]
-            bb_neg_cand=[SNeg[j] for j in neg_idx[i*1024:i*1024+1024]]
+            # bb_pos=[SPos[j] for j in pos_idx[i*32:i*32+32]]
+            # bb_neg_cand=[SNeg[j] for j in neg_idx[i*1024:i*1024+1024]]
+
+            pos_regions=PosRegions[pos_idx[i*32:i*32+32]]
+            neg_can_regions=NegRegions[neg_idx[i*1024:i*1024+1024]]
 
             # hard mini batch mining
-            neg_can_regions=np.array([ExtractRegions(i[0],i[1])[0] for i in bb_neg_cand])
-            neg_cand_features=self._convModel.predict(neg_can_regions,batch_size=10)
+            # neg_can_regions=np.array([ExtractRegions(i[0],i[1])[0] for i in bb_neg_cand])
+            neg_cand_features=self._convModel.predict(neg_can_regions,batch_size=128)
 
-            neg_can_score=self._scoreModel.predict(neg_cand_features,batch_size=10)
+            neg_can_score=self._scoreModel.predict(neg_cand_features,batch_size=128)
             neg_features=neg_cand_features[neg_can_score[:,1].argsort()[-1:-97:-1]]
 
-            pos_regions=np.array([ExtractRegions(i[0],i[1])[0] for i in bb_pos])
-            pos_features=self._convModel.predict(pos_regions,batch_size=10)
+            # pos_regions=np.array([ExtractRegions(i[0],i[1])[0] for i in bb_pos])
+            pos_features=self._convModel.predict(pos_regions,batch_size=32)
 
             # prepare labels
             labels=[[1,0] for i in range(len(pos_features))]
@@ -144,7 +157,7 @@ class MDNet(object):
             labels=np.array(labels)
 
             # update the model
-            loss=self._softmaxModel.fit(np.concatenate([pos_features,neg_features]),labels,batch_size=32,verbose=False)
+            loss=self._softmaxModel.fit(np.concatenate([pos_features,neg_features]),labels,batch_size=128,verbose=False)
             print('Frame {}, update the net, iteration:{}, loss:{}'.format(self._t_frame,i,loss.history['loss']))
 
 
@@ -188,8 +201,8 @@ class MDNet(object):
             else:
                 [pos_bb, neg_bb]=GenSamples(img_path,bb_last,50,200,[0.7,0.3],region=False,neg_trans=1)
                 pos_regions=ExtractRegions(img_path,pos_bb)
-                pos_features=self._convModel.predict(pos_regions,batch_size=10)
-                scores= self._scoreModel.predict(pos_features, batch_size=10)
+                pos_features=self._convModel.predict(pos_regions,batch_size=50)
+                scores= self._scoreModel.predict(pos_features, batch_size=50)
                 idx=scores[:,0].argsort()[-1:-5:-1]
 
                 print('Frame {}, scores:{}'.format(self._t_frame, scores[idx,0].mean()))

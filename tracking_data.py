@@ -112,16 +112,18 @@ def show_rect(bb):
 
 
 def ExtractRegions(img_path,bb_samples):
+    import cv2 as cv
+    # cv.cvtColor()
     im = plt.imread(img_path)
-
+    # im=im.astype(np.float64)
+    # im *= 1. / 255
     res=[]
     for left,top,w,h in bb_samples:
         chip=im[int(top):int(top+h)+1,int(left):int(left+w)+1]
-
-        if len(chip)==0:
-            print('123')
-        chip=imresize(chip,[_IMG_SIZE,_IMG_SIZE])
-
+        chip=cv.resize(chip,(_IMG_SIZE,_IMG_SIZE),interpolation=cv.INTER_CUBIC)
+        # chip=cv.cvtColor(chip,cv.COLOR_BGR2RGB)
+        chip=chip.astype(np.float64)
+        chip*=1./255
         res.append(chip)
 
     return np.array(res)
