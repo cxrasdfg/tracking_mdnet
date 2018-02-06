@@ -129,8 +129,8 @@ def Train(iter_times=100000):
 
 def GetTrainedWeight():
     model=LoadModel()
-    model.load_weights('weight_mdnet')
-
+    # model.load_weights('weight_mdnet')
+    model.set_weights(np.load('./weights_10k.npy').tolist())
     return model.get_weights()
 
 if __name__ == '__main__':
