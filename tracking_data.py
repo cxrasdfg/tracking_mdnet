@@ -121,9 +121,9 @@ def ExtractRegions(img_path,bb_samples):
     for left,top,w,h in bb_samples:
         chip=im[int(top):int(top+h)+1,int(left):int(left+w)+1]
         chip=cv.resize(chip,(_IMG_SIZE,_IMG_SIZE),interpolation=cv.INTER_CUBIC)
-        # chip=cv.cvtColor(chip,cv.COLOR_BGR2RGB)
-        chip=chip.astype(np.float64)
-        chip*=1./255
+        chip=cv.cvtColor(chip,cv.COLOR_BGR2RGB)
+        chip=chip.astype(np.int8)
+        # chip*=1./255
         res.append(chip)
 
     return np.array(res)
@@ -196,6 +196,7 @@ def GenSamples(img_path,gt_i,num_pos,num_neg,iou_divs,region=True,
         return [ExtractRegions(img_path,pos_samples), ExtractRegions(img_path,neg_samples)]
     else:
         return [pos_samples,neg_samples]
+
 # helper of sample generator
 # n is the required number of samples
 # bb is the bounding box

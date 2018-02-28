@@ -255,6 +255,6 @@ class MDNet(object):
 
 if __name__ == '__main__':
     print('Tracking...')
-    # seq_name='DragonBaby'
-    seq_name='video1_1'
+    seq_name='DragonBaby'
+    # seq_name='video1_1'
     MDNet().Tracking(seq_name)
