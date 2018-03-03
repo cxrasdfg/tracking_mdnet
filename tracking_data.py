@@ -122,8 +122,9 @@ def ExtractRegions(img_path,bb_samples):
         chip=im[int(top):int(top+h)+1,int(left):int(left+w)+1]
         chip=cv.resize(chip,(_IMG_SIZE,_IMG_SIZE),interpolation=cv.INTER_CUBIC)
         chip=cv.cvtColor(chip,cv.COLOR_BGR2RGB)
-        chip=chip.astype(np.int8)
+        # chip=chip.astype(np.float32)
         # chip*=1./255
+        chip=chip.astype(np.float32)-128
         res.append(chip)
 
     return np.array(res)

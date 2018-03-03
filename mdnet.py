@@ -17,7 +17,7 @@ if __name__ == '__main__':
 
     model.compile(optimizer='adam',loss='binary_crossentropy')
 
-    plot_model(model,to_file='model.png',show_shapes=True)
+    plot_model(model,to_file='vgg16.png',show_shapes=True)
     gc.collect()
 
     

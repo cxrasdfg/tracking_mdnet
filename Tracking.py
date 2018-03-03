@@ -4,6 +4,7 @@ from Utility import *
 from bbreg import BBRegressor
 from tracking_data import _IMG_SIZE,ExtractRegions
 from matplotlib import  pyplot as plt,patches
+from lrn import LRN2D
 
 
 class SampleManager(object):
@@ -61,7 +62,7 @@ class MDNet(object):
         self._scoreModel = models[2]
         self._t_frame=0
 
-        self._enable_bbr=True  # switch of the bbr regressor
+        self._enable_bbr=False  # switch of the bbr regressor
 
         small_test=False
         if small_test:
@@ -80,10 +81,14 @@ class MDNet(object):
         inputs = Input(shape=input_shape)
         # conv1
         x = Conv2D(96, (7, 7), strides=2, activation='relu', use_bias=True, trainable=False)(inputs)
+        # add lrn
+        # x = LRN2D()(x)
         x = MaxPooling2D((3, 3), strides=2)(x)
 
         # conv2
         x = Conv2D(256, (5, 5), strides=2, activation='relu', use_bias=True, trainable=False)(x)
+        # add lrn
+        # x = LRN2D()(x)
         x = MaxPooling2D((3, 3), strides=2)(x)
 
         # conv3
@@ -113,7 +118,7 @@ class MDNet(object):
         plot_model(ScoreModel, 'ScoreModel.png', show_shapes=True)
 
         ConvModel.compile(optimizer='sgd', loss='mse')
-        SoftMaxModel.compile(optimizer='sgd', loss='binary_crossentropy')
+        SoftMaxModel.compile(optimizer='adam', loss=BinaryLoss)
         ScoreModel.compile(optimizer='sgd', loss='binary_crossentropy')
 
         # test_x=np.random.randn(10,107,107,3)
@@ -255,6 +260,6 @@ class MDNet(object):
 
 if __name__ == '__main__':
     print('Tracking...')
-    seq_name='DragonBaby'
-    # seq_name='video1_1'
+    # seq_name='DragonBaby'
+    seq_name='video1_1'
     MDNet().Tracking(seq_name)

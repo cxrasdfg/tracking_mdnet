@@ -48,3 +48,63 @@ def IouRate(bb,gt):
 
     return Inter/Union
 
+
+
+def BinaryLoss(y_true,y_pred):
+    y_pred=K.maximum(y_pred,1e-6)
+    loss=-K.log(y_pred)
+    loss=y_true*loss
+    loss=K.sum(loss)
+
+    return loss
+
+def _BinaryLoss(y_true,y_pred):
+    y_true=K.get_value(y_true)
+    y_true=y_true[:,0]
+
+    y_pred=K.get_value(y_pred)
+    # find the pos index
+    pos_idx=np.where(y_true==1)[0]
+
+    # find the neg index
+    neg_idx=np.where(y_true==0)[0]
+
+    # get pos score
+    pos_score=y_pred[pos_idx]
+    pos_score=pos_score[:,0]
+    pos_score=K.variable(pos_score)
+
+    # get neg score
+    neg_score=y_pred[neg_idx]
+    neg_score=neg_score[:,1]
+    neg_score=K.variable(neg_score)
+
+    # get the loss
+    pos_loss=-K.log(pos_score)
+    neg_loss=-K.log(neg_score)
+
+    loss=K.sum(pos_loss)+K.sum(neg_loss)
+
+    return loss
+
+
+def _BinaryLossNp(pos,neg):
+
+    pos_loss=-np.log(pos)[:,0]
+    neg_loss=-np.log(neg)[:,1]
+
+    loss=pos_loss.sum()+neg_loss.sum()
+
+    return loss
+
+
+if __name__ == '__main__':
+    # test the keras implementation
+    data=np.array([[0.1,0.2],[0.7,0.1],[0.2,0.1],[0.6,0.9],[0.12,0.55]])
+    label=np.array([[1,0],[1,0],[0,1],[0,1],[0,1]])
+
+    print('keras:',K.get_value(_BinaryLoss(K.variable(label),K.variable(data))))
+
+    # test the torch implementation
+    from torch.autograd import  Variable
+    print('torch:',_BinaryLossNp(data[0:2],data[2:5]))
