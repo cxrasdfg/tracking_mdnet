@@ -52,7 +52,7 @@ class MyOpt(sgd):
         return self.updates
 
 
-def LoadModel(input_shape=(_IMG_SIZE,_IMG_SIZE,3),fc6='fc6-softmax',trainable=True):
+def LoadModel(seq_list,input_shape=(_IMG_SIZE,_IMG_SIZE,3),trainable=True):
     # input
     inputs=Input(shape=input_shape)
 
@@ -82,36 +82,32 @@ def LoadModel(input_shape=(_IMG_SIZE,_IMG_SIZE,3),fc6='fc6-softmax',trainable=Tr
 
     # fc6-k
     x=Dropout(0.5)(x)
-    if fc6=='fc6-softmax':
-        x=Dense(2,activation='softmax')(x)
-    else:
-        x=Dense(2,activation=None)(x)
+    myMDnet={key:Model(inputs=inputs,outputs=Dense(2,activation='softmax')(x)) for key in seq_list}
 
-    myMDnet=Model(inputs=inputs,outputs=x)
+    w = LoadVggWeight()
 
+    for _,model in myMDnet.items():
+        for i in range(3):
+            # 其实共享的层只需要设置一次就可以了
+            model.layers[3 * i + 1].set_weights(w[i])
+
+        opt = MyOpt(lr_list=[0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.001, 0.001, 0.001, 0.001, 0.001])
+
+        model.compile(optimizer=opt, loss=BinaryLoss)
     return myMDnet
 
 
 def Train(iter_times=100000):
-    save_video_mem()
-    model=LoadModel()
-    w=LoadVggWeight()
-
-    for i in range(3):
-        model.layers[3*i+1].set_weights(w[i])
-
-    opt=MyOpt(lr_list=[0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,0.001,0.001,0.001,0.001,0.001])
-
-    model.compile(optimizer=opt,loss=BinaryLoss)
-
     # model.compile(optimizer='adam',loss='binary_crossentropy')
 
     # show the model
-    plot_model(model,to_file='./model.png',show_shapes=True)
+    # plot_model(model,to_file='./model.png',show_shapes=True)
 
     t_data=LoadTrainData()
+    save_video_mem()
+    model = LoadModel(seq_list=list(t_data.keys()))
 
-    fc_br={i:model.layers[-1].get_weights() for i in t_data.keys()}
+    # fc_br={i:model.layers[-1].get_weights() for i in t_data.keys()}
 
     for _iter in range(iter_times):
         keys=np.array(list(t_data.keys()))
@@ -126,19 +122,19 @@ def Train(iter_times=100000):
             y=np.array(labels)
 
             # set the weights
-            model.layers[-1].set_weights(fc_br[k])
-            loss=model.fit(x,y,verbose=False)
+            # model.layers[-1].set_weights(fc_br[k])
+            loss=model[k].fit(x,y,verbose=False)
 
             print('Iter:{}, Loss:{}'.format(_iter,loss.history['loss']))
             # get the weights
-            fc_br[k]=model.layers[-1].get_weights()
+            # fc_br[k]=model.layers[-1].get_weights()
 
         if _iter % 10 ==0:
             print('Iter:{}, save the weights'.format(_iter))
-            model.save_weights('weight_mdnet')
+            model[k].save_weights('weight_mdnet')
 
 def GetTrainedWeight():
-    model=LoadModel()
+    model=list(LoadModel(seq_list=['test']).values())[0]
     model.load_weights('weight_mdnet')
     # model.set_weights(np.load('./weights_10k.npy').tolist())
     return model.get_weights()
