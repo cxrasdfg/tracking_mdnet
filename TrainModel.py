@@ -104,8 +104,18 @@ def Train(iter_times=100000):
 
     # show the model
     # plot_model(model,to_file='./model.png',show_shapes=True)
+    import pickle
+    from data_prov import RegionDataset
+    with open('./vot-otb.pkl', 'rb') as fp:
+        data = pickle.load(fp,encoding='iso-8859-1')
 
-    t_data=LoadTrainData()
+
+    t_data = {}
+    for k, (seqname, seq) in enumerate(data.items()):
+        img_list = seq['images']
+        gt = seq['gt']
+        img_dir = os.path.join('./dataset', seqname)
+        t_data[seqname] = RegionDataset(img_dir, img_list, gt)
     save_video_mem()
     model = LoadModel(seq_list=list(t_data.keys()))
 
@@ -116,7 +126,7 @@ def Train(iter_times=100000):
         np.random.shuffle(keys)
         for k in keys:
             v=t_data[k]
-            [pos,neg]=GenTrainingSamples(k,v[0],v[1])
+            pos,neg=next(v)
             x=np.concatenate([pos,neg])
             # prepare the label
             labels=[[1,0] for i in range(len(pos))]
