@@ -62,7 +62,7 @@ class MDNet(object):
         self._scoreModel = models[2]
         self._t_frame=0
 
-        self._enable_bbr=False  # switch of the bbr regressor
+        self._enable_bbr=True  # switch of the bbr regressor
 
         small_test=False
         if small_test:
@@ -206,6 +206,7 @@ class MDNet(object):
                 # train the bounding box regressor
                 bbr_bb_samples=GenSamples(img_path,gt,1000,0,[0.7,0],region=False)[0]
                 bbr_fea=self.GetFeatures(img_path,bbr_bb_samples)
+                self._bbr=BBRegressor(plt.imread(img_path).shape[1::-1])
                 self._bbr.train(bbr_fea,bbr_bb_samples,gt)
 
                 # generate positive samples S1+ and negative samples S1-
@@ -260,6 +261,6 @@ class MDNet(object):
 
 if __name__ == '__main__':
     print('Tracking...')
-    # seq_name='DragonBaby'
-    seq_name='video1_1'
+    seq_name='DragonBaby'
+    # seq_name='video1_1'
     MDNet().Tracking(seq_name)
