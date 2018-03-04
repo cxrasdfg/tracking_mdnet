@@ -28,6 +28,9 @@ def save_video_mem(video_card=0):
     k.tensorflow_backend.set_session(sess)
 
 
+def Precision(output,label):
+    return np.sum(output.argsort()==label)/2/len(label)
+
 def IouRate(bb,gt):
     """
     :param bb: N x 4 estimated data

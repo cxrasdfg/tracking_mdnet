@@ -4,6 +4,7 @@ from tracking_data import *
 from tracking_data import  _IMG_SIZE
 from lrn import LRN2D
 
+
 def LoadVggWeight():
     mat_layers=loadmat('./models/imagenet-vgg-m.mat')
     mat_layers=list(mat_layers['layers'])[0]
@@ -125,7 +126,13 @@ def Train(iter_times=100000):
             # model.layers[-1].set_weights(fc_br[k])
             loss=model[k].fit(x,y,verbose=False)
 
-            print('Iter:{}, Loss:{}'.format(_iter,loss.history['loss']))
+            predict_y = model[k].predict(x)
+
+            print('Iter:{}, Loss:{}, precision:{}'.format(
+                _iter,
+                loss.history['loss'],
+                Precision(predict_y,y))
+            )
             # get the weights
             # fc_br[k]=model.layers[-1].get_weights()
 
@@ -157,4 +164,5 @@ def LoadVgg16Version():
 
 if __name__ == '__main__':
     print('Train the Model...')
+    test=GetTrainedWeight()
     Train()
