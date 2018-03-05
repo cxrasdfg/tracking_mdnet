@@ -57,45 +57,24 @@ def LoadModel(seq_list,input_shape=(_IMG_SIZE,_IMG_SIZE,3),trainable=True):
     # input
     inputs=Input(shape=input_shape)
 
-    # conv1
-    x=Conv2D(96,(7,7),strides=2,activation='relu',use_bias=True, trainable=trainable)(inputs)
-    # add lrn
-    x=LRN2D()(x)
-    x=MaxPooling2D((3,3),strides=2)(x)
+    base_model = VGG16(weights='imagenet', include_top=False, input_tensor=inputs)
+    shared = Flatten()(base_model.output)
+    fc1 = Dense(512, activation='relu')(shared)
+    fc2 = Dense(512, activation='relu')(fc1)
 
-    # conv2
-    x=Conv2D(256,(5,5),strides=2,activation='relu',use_bias=True,trainable=trainable)(x)
-    # add lrn
-    x=LRN2D()(x)
-    x=MaxPooling2D((3,3),strides=2)(x)
+    myMDnet={key:Model(inputs=base_model.inputs, outputs=Dense(2, activation='softmax')(fc2)) for key in seq_list}
 
-    # conv3
-    x=Conv2D(512,(3,3),strides=1,activation='relu',use_bias=True,trainable=trainable)(x)
-    x=Flatten()(x)
-
-    # fc4
-    x=Dropout(0.5)(x)
-    x=Dense(512,activation='relu')(x)
-
-    # fc5
-    x=Dropout(0.5)(x)
-    x=Dense(512,activation='relu')(x)
-
-    # fc6-k
-    x=Dropout(0.5)(x)
-    myMDnet={key:Model(inputs=inputs,outputs=Dense(2,activation='softmax')(x)) for key in seq_list}
-
-    w = LoadVggWeight()
+    # w = LoadVggWeight()
 
     for _,model in myMDnet.items():
-        for i in range(3):
+        # for i in range(3):
             # 其实共享的层只需要设置一次就可以了
-            model.layers[3 * i + 1].set_weights(w[i])
+            # model.layers[3 * i + 1].set_weights(w[i])
 
         opt = MyOpt(lr_list=[0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.001, 0.001, 0.001, 0.001, 0.001]
                     ,clipnorm=10,decay=0.0005,momentum=0.9)
 
-        model.compile(optimizer=opt, loss=BinaryLoss)
+        model.compile(optimizer=sgd(lr=0.0001,clipnorm=10,decay=0.0005,momentum=0.9), loss=BinaryLoss)
     return myMDnet
 
 
@@ -165,5 +144,5 @@ def LoadVgg16Version():
 
 if __name__ == '__main__':
     print('Train the Model...')
-    test=GetTrainedWeight()
+    # test=GetTrainedWeight()
     Train()
