@@ -59,9 +59,11 @@ def LoadModel(seq_list,input_shape=(_IMG_SIZE,_IMG_SIZE,3),trainable=True):
 
     base_model = VGG16(weights='imagenet', include_top=False, input_tensor=inputs)
     shared = Flatten()(base_model.output)
+    shared = Dropout(0.5)(shared)
     fc1 = Dense(512, activation='relu')(shared)
+    fc1 = Dropout(0.5)(fc1)
     fc2 = Dense(512, activation='relu')(fc1)
-
+    fc2 = Dropout(0.5)(fc2)
     myMDnet={key:Model(inputs=base_model.inputs, outputs=Dense(2, activation='softmax')(fc2)) for key in seq_list}
 
     # w = LoadVggWeight()
@@ -71,8 +73,8 @@ def LoadModel(seq_list,input_shape=(_IMG_SIZE,_IMG_SIZE,3),trainable=True):
             # 其实共享的层只需要设置一次就可以了
             # model.layers[3 * i + 1].set_weights(w[i])
 
-        opt = MyOpt(lr_list=[0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.001, 0.001, 0.001, 0.001, 0.001]
-                    ,clipnorm=10,decay=0.0005,momentum=0.9)
+        # opt = MyOpt(lr_list=[0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.001, 0.001, 0.001, 0.001, 0.001]
+        #             ,clipnorm=10,decay=0.0005,momentum=0.9)
 
         model.compile(optimizer=sgd(lr=0.0001,clipnorm=10,decay=0.0005,momentum=0.9), loss=BinaryLoss)
     return myMDnet

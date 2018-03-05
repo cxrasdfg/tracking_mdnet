@@ -79,23 +79,11 @@ class MDNet(object):
         # input layer
 
         inputs = Input(shape=input_shape)
-        # conv1
-        x = Conv2D(96, (7, 7), strides=2, activation='relu', use_bias=True, trainable=False)(inputs)
-        # add lrn
-        # x = LRN2D()(x)
-        x = MaxPooling2D((3, 3), strides=2)(x)
+        base_model = VGG16(weights='imagenet', include_top=False, input_tensor=inputs)
+        shared = Flatten()(base_model.output)
 
-        # conv2
-        x = Conv2D(256, (5, 5), strides=2, activation='relu', use_bias=True, trainable=False)(x)
-        # add lrn
-        # x = LRN2D()(x)
-        x = MaxPooling2D((3, 3), strides=2)(x)
+        ConvModel = Model(inputs=base_model.inputs, outputs=shared, name='conv_model')
 
-        # conv3
-        x = Conv2D(512, (3, 3), strides=1, activation='relu', use_bias=True, trainable=False)(x)
-        x = Flatten()(x)
-
-        ConvModel = Model(inputs=inputs, outputs=x, name='conv_model')
 
         fc_inputs = Input(shape=(ConvModel.output_shape[1],))
         # fc4
@@ -113,9 +101,6 @@ class MDNet(object):
         SoftMaxModel = Model(inputs=fc_inputs, outputs=x_softmax, name='SoftmaxModel')
         ScoreModel = Model(inputs=fc_inputs, outputs=x, name='ScoreModel')
 
-        plot_model(ConvModel, 'ConvModel.png', show_shapes=True)
-        plot_model(SoftMaxModel, 'SoftMaxModel.png', show_shapes=True)
-        plot_model(ScoreModel, 'ScoreModel.png', show_shapes=True)
 
         ConvModel.compile(optimizer='sgd', loss='mse')
         SoftMaxModel.compile(optimizer='adam', loss=BinaryLoss)
